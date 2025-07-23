@@ -2,8 +2,8 @@
 import fs from 'fs';
 import { parse } from 'csv-parse/sync';
 
-const csvPath = 'AWS.csv';
-const outputPath = 'raw_eng_json/aws-quiz.json';
+const csvPath = 'web.csv';
+const outputPath = 'quiz-all.json';
 
 const csvContent = fs.readFileSync(csvPath, 'utf8');
 const records = parse(csvContent, {

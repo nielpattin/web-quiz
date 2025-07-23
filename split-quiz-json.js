@@ -1,8 +1,8 @@
 // split-aws-quiz.js
 import fs from 'fs';
 
-const inputPath = 'raw_eng_json/moimoi-quiz.json';
-const outputDir = 'moimoi';
+const inputPath = 'quiz-all.json';
+const outputDir = 'quiz-json';
 
 const data = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
 const chunkSize = 30;
