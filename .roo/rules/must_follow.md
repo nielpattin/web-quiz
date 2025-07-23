@@ -1,0 +1,11 @@
+- Always use tailwindcss v4
+- Always use the latest version of Tailwind CSS
+- NEVER ASK TO RUN THE SERVER, ALWAY USE PNPM PACKAGE MANAGER
+- Alway check what key exist in the src/lib/localKeys.ts file for the latest keys if you want to change something about local storage data
+- Always use `import { SvelteSet } from 'svelte/reactivity'` for Svelte reactivity with Set, never create a custom SvelteSet class.
+- Always place all import statements at the very top of every file.
+- Cannot export derived state from a module. To expose the current derived value, export a function returning its value.
+- Always use $state({}) object for shared state across modules. Do not directly export primitive $state values if you need to mutate or share them; use an object instead to avoid Svelte compiler reactivity issues.
+- Never add Test or Verify to the Todo list tool
+- Always move `const` variable declarations to the top of the file, before any function definitions, ensuring they are positioned at the highest scope and ordered consistently. But still below the import statements.
+- Don't do `import { $state, $effect } from 'svelte/store'` in the root of the file, you can use it directly in the \*.svelte file.
