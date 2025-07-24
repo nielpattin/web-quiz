@@ -36,36 +36,6 @@
 		shuffledIndices[idx] = shuffled;
 	});
 
-	function handleSwipeUp(idx: number) {
-		const cardEl = document.querySelectorAll('.quiz-card')[idx - (pageState.current - 1)];
-		if (cardEl && cardEl.scrollTop + cardEl.clientHeight >= cardEl.scrollHeight - 2) {
-			if (idx === pageState.current && pageState.current < pageState.quizData.length - 1) {
-				pageState.current += 1;
-				pageState.selectedAnswers = [];
-				pageState.questionLocked = false;
-				setTimeout(() => {
-					const nextCard = document.querySelectorAll('.quiz-card')[2];
-					if (nextCard) nextCard.scrollTop = 0;
-				}, 0);
-			}
-		}
-	}
-
-	function handleSwipeDown(idx: number) {
-		const cardEl = document.querySelectorAll('.quiz-card')[idx - (pageState.current - 1)];
-		if (cardEl && cardEl.scrollTop <= 2) {
-			if (idx === pageState.current && pageState.current > 0) {
-				pageState.current -= 1;
-				pageState.selectedAnswers = [];
-				pageState.questionLocked = false;
-				setTimeout(() => {
-					const prevCard = document.querySelectorAll('.quiz-card')[0];
-					if (prevCard) prevCard.scrollTop = 0;
-				}, 0);
-			}
-		}
-	}
-
 	function handleToggleFavorite(idx: number) {
 		if (!pageState.quizData[idx]) return;
 		const qid = pageState.quizData[idx].question_id;
@@ -99,6 +69,18 @@
 	function checkAnswers() {
 		pageState.questionLocked = true;
 	}
+
+	function goToPreviousCard() {
+		if (pageState.current > 0) {
+			pageState.current -= 1;
+		}
+	}
+
+	function goToNextCard() {
+		if (pageState.current < pageState.quizData.length - 1) {
+			pageState.current += 1;
+		}
+	}
 </script>
 
 <!-- Carousel Component -->
@@ -126,8 +108,8 @@
 						toggleFavorite={(idx: number) => handleToggleFavorite(idx)}
 						answers={getAnswers(idx)}
 						originalIndices={shuffledIndices[idx]}
-						onSwipeUp={handleSwipeUp}
-						onSwipeDown={handleSwipeDown}
+						{goToPreviousCard}
+						{goToNextCard}
 					/>
 				</div>
 			{/if}

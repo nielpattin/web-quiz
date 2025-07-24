@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { Star } from '@lucide/svelte';
+	let { isHeld } = $state({ isHeld: false });
+	import { Star, ArrowUp, ArrowDown } from '@lucide/svelte';
 	interface Answer {
 		answer_text?: string;
 		[key: string]: unknown;
@@ -18,10 +18,8 @@
 		toggleFavorite: (idx: number) => void;
 		answers: Answer[];
 		originalIndices?: number[];
-		onSwipeLeft?: () => void;
-		onSwipeRight?: () => void;
-		onSwipeUp?: (idx: number) => void;
-		onSwipeDown?: (idx: number) => void;
+		goToPreviousCard: () => void;
+		goToNextCard: () => void;
 	}
 
 	let {
@@ -35,9 +33,9 @@
 		answers,
 		originalIndices,
 		toggleFavorite,
-		onSwipeUp,
-		onSwipeDown,
-		favorites
+		favorites,
+		goToPreviousCard,
+		goToNextCard
 	}: Props = $props();
 
 	// Use reactive favorite state from props, not store
@@ -45,199 +43,100 @@
 		return favorites.has(id);
 	}
 
-	onMount(() => {
-		const cardEls = document.querySelectorAll('.quiz-card');
-		const touchMoveHandler = (e: Event) => handleTouchMove(e as TouchEvent);
-		cardEls.forEach((cardEl) => {
-			cardEl.addEventListener('touchmove', touchMoveHandler, { passive: false });
+	// Track scroll position and log when reaching edges only once per edge per scroll session
+	let scrollContainer: HTMLDivElement | null = null;
+	const edgeState = $state({
+		topLogged: false,
+		bottomLogged: false
+	});
+	const scrollState = $state<{ value: 'top' | 'middle' | 'bottom' }>({ value: 'top' });
+	const isScrollable = $state({ value: false });
+
+	function checkScrollable() {
+		if (!scrollContainer) {
+			isScrollable.value = false;
+			return;
+		}
+		const { scrollHeight, clientHeight } = scrollContainer;
+		isScrollable.value = scrollHeight > clientHeight + 1;
+	}
+
+	$effect(() => {
+		if (!scrollContainer) return;
+
+		const handleScroll = () => {
+			const { scrollTop, scrollHeight, clientHeight } = scrollContainer as HTMLDivElement;
+			const isAtTop = scrollTop === 0;
+			const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+			if (isAtTop) {
+				scrollState.value = 'top';
+				if (!edgeState.topLogged) {
+					console.log('Scrolled to top of QuizCard');
+					edgeState.topLogged = true;
+				}
+			} else if (isAtBottom) {
+				scrollState.value = 'bottom';
+				if (!edgeState.bottomLogged) {
+					console.log('Scrolled to bottom of QuizCard');
+					edgeState.bottomLogged = true;
+				}
+			} else {
+				scrollState.value = 'middle';
+				edgeState.topLogged = false;
+				edgeState.bottomLogged = false;
+			}
+		};
+
+		const handleResize = () => {
+			checkScrollable();
+		};
+
+		(scrollContainer as HTMLDivElement).addEventListener('scroll', handleScroll);
+		window.addEventListener('resize', handleResize);
+
+		$effect(() => {
+			checkScrollable();
 		});
+
 		return () => {
-			cardEls.forEach((cardEl) => {
-				cardEl.removeEventListener('touchmove', touchMoveHandler);
-			});
+			const container = scrollContainer as HTMLDivElement;
+			container.removeEventListener('scroll', handleScroll);
+			window.removeEventListener('resize', handleResize);
 		};
 	});
-
-	let startX = 0;
-	let startY = 0;
-	let currentX = 0;
-	let currentY = 0;
-	let translateY = $state(0);
-	let isTouching = $state(false);
-	let scrollAtEdgeOnce = $state<false | true | 'wait'>(false);
-	let animating = $state(false);
-	let animationDirection = $state<'up' | 'down' | null>(null);
-	let isVerticalSwipe = false;
+	let touchStartY = 0;
+	let touchEndY = 0;
 
 	function handleTouchStart(e: TouchEvent) {
-		if (animating) return;
-		if (e.touches.length !== 1) return;
-		startX = e.touches[0].clientX;
-		startY = e.touches[0].clientY;
-		currentX = startX;
-		currentY = startY;
-		isVerticalSwipe = false;
-		isTouching = true;
-		scrollAtEdgeOnce = false;
+		touchStartY = e.touches[0].clientY;
 	}
 
-	function handleTouchMove(e: TouchEvent) {
-		if (animating) return;
-		if (e.touches.length !== 1) return;
-		currentX = e.touches[0].clientX;
-		currentY = e.touches[0].clientY;
-
-		if (isTouching && window.innerWidth < 768) {
-			const cardEl = e.currentTarget as HTMLElement;
-			const atBottom = cardEl.scrollTop + cardEl.clientHeight >= cardEl.scrollHeight - 2;
-			const atTop = cardEl.scrollTop <= 2;
-
-			if (atBottom || atTop) {
-				if (scrollAtEdgeOnce === false || scrollAtEdgeOnce === 'wait') {
-					// First time reaching edge, set flag but don't move card yet
-					scrollAtEdgeOnce = true;
-				} else if (scrollAtEdgeOnce === true) {
-					// Only move card if we started the touch at the edge
-					if (
-						startY <= cardEl.getBoundingClientRect().top + 2 ||
-						startY >= cardEl.getBoundingClientRect().bottom - 2
-					) {
-						console.log('[handleTouchMove] Card should follow finger', {
-							scrollAtEdgeOnce,
-							startY,
-							currentY,
-							atTop,
-							atBottom
-						});
-						// Only allow card to follow finger if not animating and not already at navigation threshold
-						if (!animating) {
-							translateY = currentY - startY;
-							console.log(
-								'[handleTouchMove] translateY updated:',
-								translateY,
-								'isTouching:',
-								isTouching,
-								'scrollAtEdgeOnce:',
-								scrollAtEdgeOnce
-							);
-						}
-					}
-				}
+	function handleTouchEnd(e: TouchEvent) {
+		touchEndY = e.changedTouches[0].clientY;
+		const deltaY = touchEndY - touchStartY;
+		if (Math.abs(deltaY) > 40) {
+			if (deltaY < 0) {
+				goToNextCard();
 			} else {
-				scrollAtEdgeOnce = false;
+				goToPreviousCard();
 			}
 		}
-
-		const deltaY = currentY - startY;
-
-		// Determine swipe direction and prevent interference with horizontal scrolling
-		if (!isVerticalSwipe && Math.abs(deltaY) > Math.abs(currentX - startX)) {
-			isVerticalSwipe = true;
-		}
-
-		// Only block scroll if swipe threshold is passed and at boundary
-		if (window.innerWidth < 768 && isVerticalSwipe) {
-			const cardEl = e.currentTarget as HTMLElement;
-			const isScrollable = cardEl.scrollHeight > cardEl.clientHeight;
-			const atBottom = cardEl.scrollTop + cardEl.clientHeight >= cardEl.scrollHeight - 2;
-			const atTop = cardEl.scrollTop <= 2;
-			const threshold = 15;
-
-			// Only preventDefault if we are at the boundary AND swiping past threshold
-			if (isScrollable) {
-				const isScrolling = Math.abs(deltaY) < Math.abs(currentX - startX);
-				const touchY = e.touches[0].clientY;
-				const bounding = cardEl.getBoundingClientRect();
-				const nearTop = touchY - bounding.top < 40;
-				const nearBottom = bounding.bottom - touchY < 40;
-
-				if (
-					!isScrolling &&
-					((deltaY < -threshold && atBottom && nearBottom) ||
-						(deltaY > threshold && atTop && nearTop))
-				) {
-					if (e.cancelable) {
-						e.preventDefault();
-					}
-				}
-			}
-		}
-	}
-
-	function handleTouchEnd() {
-		if (animating) return;
-		const deltaY = currentY - startY;
-		const threshold = 15; // px
-
-		if (window.innerWidth < 768 && isVerticalSwipe) {
-			const cardEl = document.querySelector('.quiz-card');
-			const atBottom = cardEl && cardEl.scrollTop + cardEl.clientHeight >= cardEl.scrollHeight - 2;
-			const atTop = cardEl && cardEl.scrollTop <= 2;
-
-			console.log('[handleTouchEnd]', {
-				scrollAtEdgeOnce,
-				atTop,
-				atBottom,
-				deltaY,
-				threshold,
-				animating,
-				isVerticalSwipe
-			});
-
-			if (scrollAtEdgeOnce === true) {
-				console.log('NAVIGATE: allowed');
-				// Only allow navigation if the previous touch ended at the edge
-				if (deltaY < -threshold && atBottom) {
-					console.log('NAVIGATE: up');
-					animationDirection = 'up';
-					translateY = -window.innerHeight * 0.7;
-					animating = true;
-					setTimeout(() => {
-						onSwipeUp?.(current);
-						translateY = 0;
-						animationDirection = null;
-						animating = false;
-					}, 200);
-				} else if (deltaY > threshold && atTop) {
-					console.log('NAVIGATE: down');
-					animationDirection = 'down';
-					translateY = window.innerHeight * 0.7;
-					animating = true;
-					setTimeout(() => {
-						onSwipeDown?.(current);
-						translateY = 0;
-						animationDirection = null;
-						animating = false;
-					}, 200);
-				} else {
-					console.log('NAVIGATE: snap back');
-					translateY = 0;
-				}
-				// Reset so next navigation requires another edge touch
-				scrollAtEdgeOnce = false;
-			} else if (scrollAtEdgeOnce === 'wait') {
-				console.log('NAVIGATE: blocked, waiting for another edge touch');
-			} else {
-				console.log('NAVIGATE: blocked, first edge touch');
-			}
-		}
-		isVerticalSwipe = false;
-		isTouching = false;
-		scrollAtEdgeOnce = false;
 	}
 </script>
 
 <!-- Quiz Card -->
 <div
+	bind:this={scrollContainer}
 	class="quiz-card main-scrollbar bg-[#29273F] text-[#CECDE0] rounded-2xl shadow-lg w-[95vw] h-[95%] md:w-[90%] md:h-[500px] px-4 pt-6 relative flex flex-col gap-2 touch-pan-y overflow-y-auto scrollbar-thin scrollbar-thumb-[#8582B0] scrollbar-track-[#29273F]"
-	ontouchstart={handleTouchStart}
-	ontouchend={handleTouchEnd}
-	style="transform: translateY({isTouching && scrollAtEdgeOnce === true
-		? translateY
-		: 0}px); transition: {animating || animationDirection
-		? 'transform 0.2s cubic-bezier(0.4,0,0.2,1)'
-		: 'none'};"
-	ontouchmove={(e) => handleTouchMove(e)}
+	style="transform: translateY(0px); transition: none;"
+	onmousedown={() => (isHeld = true)}
+	onmouseup={() => (isHeld = false)}
+	onmouseleave={() => (isHeld = false)}
+	ontouchstart={() => (isHeld = true)}
+	ontouchend={() => (isHeld = false)}
+	role="button"
+	tabindex="0"
 >
 	<!-- Question number and Favorite Button row -->
 	<div class="flex items-center justify-between mb-2">
@@ -321,4 +220,35 @@
 			Check
 		</button>
 	</div>
+	<!-- Upward Arrow Icon (absolute, sibling to card content) -->
 </div>
+{#if isScrollable.value}
+	<button
+		type="button"
+		class="fixed bottom-28 left-1/2 -translate-x-1/2 z-10 w-16 h-16 flex items-center justify-center rounded-full bg-[#29273F] border-2 border-[#C294FF] shadow-lg transition-opacity duration-200"
+		aria-label="Go to previous card"
+		class:opacity-0={scrollState.value !== 'top' || isHeld}
+		class:pointer-events-none={scrollState.value !== 'top'}
+		onclick={goToPreviousCard}
+	>
+		<ArrowUp class="w-8 h-8 text-[#C294FF]" />
+	</button>
+	<button
+		type="button"
+		class="fixed bottom-28 left-1/2 -translate-x-1/2 z-10 w-16 h-16 flex items-center justify-center rounded-full bg-[#29273F] border-2 border-[#C294FF] shadow-lg transition-opacity duration-200"
+		aria-label="Go to next card"
+		class:opacity-0={scrollState.value !== 'bottom' || isHeld}
+		class:pointer-events-none={scrollState.value !== 'bottom'}
+		onclick={goToNextCard}
+	>
+		<ArrowDown class="w-8 h-8 text-[#C294FF]" />
+	</button>
+{:else}
+	<!-- Swipe gesture logic for card change when not scrollable -->
+	<div
+		class="absolute inset-0 z-10"
+		ontouchstart={handleTouchStart}
+		ontouchend={handleTouchEnd}
+		style="background: transparent;"
+	></div>
+{/if}
