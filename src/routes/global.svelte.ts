@@ -9,6 +9,8 @@ export const favoritesStore = $state<Record<string, Question>>({});
 
 export type Quiz = {
 	question_id: string;
+	question_text: string;
+	question_type: string;
 	answers: string[];
 	[key: string]: unknown;
 };

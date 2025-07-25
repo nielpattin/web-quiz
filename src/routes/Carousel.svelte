@@ -4,6 +4,7 @@
 
 	interface CurrentQuestion {
 		question_id?: string;
+		question_text?: string;
 		answers?: Array<{ is_correct: boolean }>;
 		question_type: string;
 	}
@@ -11,6 +12,7 @@
 	function getCurrentQuestionWithType(q: Record<string, unknown>): CurrentQuestion {
 		return {
 			question_id: typeof q.question_id === 'string' ? q.question_id : '',
+			question_text: typeof q.question_text === 'string' ? q.question_text : '',
 			answers: Array.isArray(q.answers) ? (q.answers as Array<{ is_correct: boolean }>) : [],
 			question_type: typeof q.question_type === 'string' ? (q.question_type as string) : 'single'
 		};
