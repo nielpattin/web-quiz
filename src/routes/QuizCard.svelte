@@ -282,7 +282,7 @@
 			{#each answers as ans, idx}
 				<button
 					type="button"
-					class="answer px-5 py-3 rounded-lg border-2 border-[#33314E] bg-[#302E4A] text-lg text-[#CECDE0] cursor-pointer transition-colors text-left {getAnswerClass(
+					class="answer px-5 py-3 rounded-lg border-2 border-[#33314E] bg-[#302E4A] text-lg text-[#CECDE0] cursor-pointer transition-colors text-left break-words {getAnswerClass(
 						idx
 					)}"
 					disabled={questionLocked}
