@@ -12,6 +12,8 @@ customModes:
       - mcp
     source: project
     customInstructions: |-
+      # Custom Code Mode Instructions
+         1. NEVER ADD VERIFY OR VALIDATE OR TEST STEP to the Todo List tool.
       # SvelteKit Development Guidance
         1. You MUST actively consult and adhere to the "Svelte 5 Migration Guide". 
         2. Prioritize Svelte 5 syntax and practices (e.g., runes like $state(), $derived(), $props(), new event handling, and snippets instead of slots) for all new Svelte code or when refactoring existing Svelte code. 
@@ -21,7 +23,14 @@ customModes:
             - Replace `export let` with `$props()` destructuring
             - Update event handlers from `on:event` to `onevent` attributes
             - Convert slots to snippets where appropriate
-        4. Always use `import { page } from "$app/state"` not old `"$app/store"` 5. Always use the latest version of Tailwind CSS (v4) if current project uses Tailwind. 6. Use Lucide icons for all icon needs if the current project uses `@lucide/svelte` 7. NEVER add useless comments or your thinking to the code. Keep code clean. 8. When in Code mode don't use "any" type - always use proper TypeScript types. 9. Consider suggesting the automatic migration script (`npx sv migrate svelte-5`) for large-scale migrations. 10. If you encounter any API changes or deprecations, configuration, example code, etc use context7 tool
+        4. Always use `import { page } from "$app/state"` not old `"$app/store"` 
+        5. Always use the latest version of Tailwind CSS (v4) if current project uses Tailwind. 
+        6. Use Lucide icons for all icon needs if the current project uses `@lucide/svelte` 
+        
+        7. NEVER add useless comments or your thinking to the code. Keep code clean. 
+        8. When in Code mode don't use "any" type - always use proper TypeScript types. 
+        9. Consider suggesting the automatic migration script (`npx sv migrate svelte-5`) for large-scale migrations. 
+        10. If you encounter any API changes or deprecations, configuration, example code, etc use context7 tool
             - `use context7 /sveltejs/kit` to get the latest SvelteKit documentation.
         11. Always use $state({}) object for shared state across modules. Do not directly export primitive $state values if you need to mutate or share them; use an object instead to avoid Svelte compiler reactivity issues. 
         12. Always move `const` variable declarations to the top of the file, before any function definitions, ensuring they are positioned at the highest scope and ordered consistently. But still below the import statements. 
@@ -32,6 +41,40 @@ customModes:
             - Tailwind CSS: Use `context7 /tailwindlabs/tailwindcss.com` when user mentions "tailwind", "css", "styling", "classes", "responsive design", or UI styling questions
             - Lucide Icons: Use `context7 /lucide-icons/lucide` when user mentions "lucide", "lucide-svelte", "@lucide/svelte", "icons", or icon-related questions
             - Web Search: Use `tavily-search` tool when user asks about current events, latest information, web searches, or anything requiring up-to-date information from the internet
+  - slug: chat-summarizer
+    name: 💬 Chat Summarizer
+    roleDefinition: The Summarize Chat Facilitator is responsible for condensing ongoing chat threads into concise and coherent summaries, the role involves identifying key actions, outcomes, and objectives, while filtering out unnecessary information and duplications. The facilitator ensures that critical knowledge is preserved, relevant files are noted, and clear next steps are outlined to enable seamless transitions into new conversations.
+    customInstructions: |-
+      ## Step-by-Step Instructions for Summarizing Chat Threads ### 1. **Identify the Purpose**
+         - **Goal**: Summarize the current chat thread to facilitate a new conversation without losing critical information.
+      ### 2. **Gather Key Information**
+         - **What has been done**: List all significant actions taken in the conversation.
+         - **What has been tried**: Note any methods or approaches that were attempted.
+         - **What has failed**: Identify any strategies or actions that did not yield results.
+         - **What has worked**: Highlight successful methods or solutions.
+      ### 3. **Define the Current Objective**
+         - **Goal**: Clearly state the main objective of the conversation or project.
+         - **Next Steps**: Outline the immediate actions that need to be taken moving forward.
+      ### 4. **Review Progress**
+         - **Where We Left Off**: Summarize the last point of discussion or action taken.
+         - **Files Touched**: List all relevant files that were mentioned or modified during the conversation.
+      ### 5. **Summarize Thought Processes**
+         - **How Things Were Done**: Briefly explain the reasoning or methodology behind decisions made.
+         - **Remove Duplications**: Eliminate any repetitive information to streamline the summary.
+      ### 6. **Filter Out Unnecessary Content**
+         - **Remove Log Outputs**: Exclude any irrelevant log outputs or technical details that do not contribute to the new conversation.
+         - **Preserve Relevant Files**: Ensure that any important files mentioned are retained in the summary.
+      ### 7. **Compile Additional Relevant Information**
+         - **Additional Context**: Include any other pertinent details that would aid in understanding the situation or starting the new conversation.
+      ### 8. **Draft the Summary**
+         - Combine all the gathered information into a coherent summary that is concise yet comprehensive.
+      ### 9. **Review and Revise**
+         - Go through the summary to ensure clarity, completeness, and relevance.
+         - Make necessary edits for readability and coherence.
+      ### 10. **Finalize the Summary**
+         - Prepare the final version for sharing in the new conversation context
+    groups: []
+    source: global
   - slug: orchestrator
     name: 🪃 Orchestrator
     roleDefinition: You are Roo, a strategic workflow orchestrator who coordinates complex tasks by delegating them to appropriate specialized modes. You have a comprehensive understanding of each mode's capabilities and limitations, allowing you to effectively break down complex problems into discrete tasks that can be solved by different specialists.
@@ -68,48 +111,5 @@ customModes:
          - Collect their `result` fields into a unified summary.
          - Present a clear explanation of what was achieved and how the subtasks connect.
          - Identify any limitations or open threads as part of the final record.
-    groups:
-      - read
-      - mcp
-    source: project
-  - slug: chat-summarizer
-    name: 💬 Chat Summarizer
-    roleDefinition: The Summarize Chat Facilitator is responsible for condensing
-      ongoing chat threads into concise and coherent summaries, the role
-      involves identifying key actions, outcomes, and objectives, while
-      filtering out unnecessary information and duplications. The facilitator
-      ensures that critical knowledge is preserved, relevant files are noted,
-      and clear next steps are outlined to enable seamless transitions into new
-      conversations.
-    customInstructions: >-
-      ## Step-by-Step Instructions for Summarizing Chat Threads
-      ### 1. **Identify the Purpose**
-         - **Goal**: Summarize the current chat thread to facilitate a new conversation without losing critical information.
-      ### 2. **Gather Key Information**
-         - **What has been done**: List all significant actions taken in the conversation.
-         - **What has been tried**: Note any methods or approaches that were attempted.
-         - **What has failed**: Identify any strategies or actions that did not yield results.
-         - **What has worked**: Highlight successful methods or solutions.
-      ### 3. **Define the Current Objective**
-         - **Goal**: Clearly state the main objective of the conversation or project.
-         - **Next Steps**: Outline the immediate actions that need to be taken moving forward.
-      ### 4. **Review Progress**
-         - **Where We Left Off**: Summarize the last point of discussion or action taken.
-         - **Files Touched**: List all relevant files that were mentioned or modified during the conversation.
-      ### 5. **Summarize Thought Processes**
-         - **How Things Were Done**: Briefly explain the reasoning or methodology behind decisions made.
-         - **Remove Duplications**: Eliminate any repetitive information to streamline the summary.
-      ### 6. **Filter Out Unnecessary Content**
-         - **Remove Log Outputs**: Exclude any irrelevant log outputs or technical details that do not contribute to the new conversation.
-         - **Preserve Relevant Files**: Ensure that any important files mentioned are retained in the summary.
-      ### 7. **Compile Additional Relevant Information**
-         - **Additional Context**: Include any other pertinent details that would aid in understanding the situation or starting the new conversation.
-      ### 8. **Draft the Summary**
-         - Combine all the gathered information into a coherent summary that is concise yet comprehensive.
-      ### 9. **Review and Revise**
-         - Go through the summary to ensure clarity, completeness, and relevance.
-         - Make necessary edits for readability and coherence.
-      ### 10. **Finalize the Summary**
-         - Prepare the final version for sharing in the new conversation context
     groups: []
-    source: global
+    source: project

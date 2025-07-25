@@ -2,6 +2,19 @@
 	import QuizCard from './QuizCard.svelte';
 	import { pageState, favorites } from './global.svelte';
 
+	interface CurrentQuestion {
+		question_id?: string;
+		answers?: Array<{ is_correct: boolean }>;
+		question_type: string;
+	}
+
+	function getCurrentQuestionWithType(q: Record<string, unknown>): CurrentQuestion {
+		return {
+			question_id: typeof q.question_id === 'string' ? q.question_id : '',
+			answers: Array.isArray(q.answers) ? (q.answers as Array<{ is_correct: boolean }>) : [],
+			question_type: typeof q.question_type === 'string' ? (q.question_type as string) : 'single'
+		};
+	}
 	function shuffleArray<T>(array: T[]): T[] {
 		const arr = array.slice();
 		for (let i = arr.length - 1; i > 0; i--) {
@@ -53,31 +66,69 @@
 	}
 
 	function handleAnswerClick(idx: number, questionType: string) {
-		if (pageState.questionLocked) return;
+		console.log('[handleAnswerClick] called', {
+			idx,
+			questionType,
+			questionLocked: pageState.questionLocked,
+			currentQuestionId: pageState.quizData[pageState.current]?.question_id,
+			lockedStatus: pageState.questionLockedStatus.get(
+				pageState.quizData[pageState.current]?.question_id
+			)
+		});
+		if (pageState.questionLocked) {
+			console.log('[handleAnswerClick] blocked: pageState.questionLocked');
+			return;
+		}
+		const currentQuestionId = pageState.quizData[pageState.current]?.question_id;
+		if (!currentQuestionId) {
+			console.log('[handleAnswerClick] blocked: no currentQuestionId');
+			return;
+		}
+
+		// For single-answer questions, return early if the question is already locked
+		if (questionType === 'single' && pageState.questionLockedStatus.get(currentQuestionId)) {
+			console.log('[handleAnswerClick] blocked: already locked for single');
+			return;
+		}
+
+		const currentAnswers = pageState.questionAnswers.get(currentQuestionId) || [];
+		let newAnswers: number[];
 		if (questionType === 'multiple_answer_question') {
-			if (pageState.selectedAnswers.includes(idx)) {
-				pageState.selectedAnswers = pageState.selectedAnswers.filter((i) => i !== idx);
+			if (currentAnswers.includes(idx)) {
+				newAnswers = currentAnswers.filter((i) => i !== idx);
 			} else {
-				pageState.selectedAnswers = [...pageState.selectedAnswers, idx];
+				newAnswers = [...currentAnswers, idx];
 			}
 		} else {
-			pageState.selectedAnswers = [idx];
+			newAnswers = [idx];
+			console.log('[handleAnswerClick] single-answer: locking after selection');
 			checkAnswers();
 		}
+		pageState.questionAnswers.set(currentQuestionId, newAnswers);
+		console.log('[handleAnswerClick] updated answers', newAnswers);
 	}
 
 	function checkAnswers() {
-		pageState.questionLocked = true;
+		const currentQuestionId = pageState.quizData[pageState.current]?.question_id;
+		if (currentQuestionId) {
+			pageState.questionLockedStatus.set(currentQuestionId, true);
+		}
 	}
 
 	function goToPreviousCard() {
 		if (pageState.current > 0) {
+			// Reset all question states when navigating to a new card
+			pageState.questionAnswers.clear();
+			pageState.questionLockedStatus.clear();
 			pageState.current -= 1;
 		}
 	}
 
 	function goToNextCard() {
 		if (pageState.current < pageState.quizData.length - 1) {
+			// Reset all question states when navigating to a new card
+			pageState.questionAnswers.clear();
+			pageState.questionLockedStatus.clear();
 			pageState.current += 1;
 		}
 	}
@@ -97,11 +148,14 @@
 						110}%)); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);"
 				>
 					<QuizCard
-						currentQuestion={pageState.quizData[idx]}
+						currentQuestion={getCurrentQuestionWithType(pageState.quizData[idx])}
 						current={idx}
 						quizData={pageState.quizData}
-						selectedAnswers={idx === pageState.current ? pageState.selectedAnswers : []}
-						questionLocked={idx === pageState.current ? pageState.questionLocked : false}
+						selectedAnswers={pageState.questionAnswers.get(pageState.quizData[idx]?.question_id) ??
+							[]}
+						questionLocked={pageState.questionLockedStatus.get(
+							pageState.quizData[idx]?.question_id
+						) ?? false}
 						{checkAnswers}
 						{handleAnswerClick}
 						{favorites}

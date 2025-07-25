@@ -18,7 +18,8 @@
 		favorites,
 		appState,
 		uiState,
-		getFavIdList
+		getFavIdList,
+		setCurrentView
 	} from './global.svelte';
 
 	let isInitialLoad = $state(true);
@@ -26,7 +27,7 @@
 	async function showFavorites() {
 		if (typeof window !== 'undefined') {
 			localStorage.setItem(CURRENT_VIEW_KEY, 'favorites');
-			appState.currentView = 'favorites';
+			setCurrentView('favorites');
 			const favStateRaw = localStorage.getItem(FAVORITES_LOCAL_KEY);
 			const favQuestionsRaw = localStorage.getItem(FAVORITE_QUESTIONS_KEY);
 			const favIdsArr = favQuestionsRaw ? JSON.parse(favQuestionsRaw) : [];
@@ -81,7 +82,7 @@
 	function onBackToAll() {
 		if (typeof window !== 'undefined') {
 			localStorage.setItem(CURRENT_VIEW_KEY, 'all');
-			appState.currentView = 'all';
+			setCurrentView('all');
 			loadAppState('all');
 			pageState.moduleId = appState.all.module;
 			loadQuizForModule(appState.all.module, appState.all.questionIndex);
@@ -94,7 +95,7 @@
 			localStorage.setItem(FAVORITE_QUESTIONS_KEY, '[]');
 		}
 		if (appState.currentView === 'favorites') {
-			appState.currentView = 'all';
+			setCurrentView('all');
 			pageState.moduleId = appState.all.module;
 			loadQuizForModule(appState.all.module, appState.all.questionIndex);
 		}
@@ -104,7 +105,7 @@
 		pageState.moduleId = id;
 		appState.all.questionIndex = 0;
 		pageState.current = 0;
-		pageState.selectedAnswers = [];
+		pageState.questionAnswers.clear();
 		pageState.questionLocked = false;
 		await loadQuizForModule(id, 0);
 	}
@@ -130,7 +131,7 @@
 		favorites.clear();
 		for (const id of favArr) favorites.add(id);
 		const currentView = (localStorage.getItem(CURRENT_VIEW_KEY) as 'all' | 'favorites') || 'all';
-		appState.currentView = currentView;
+		setCurrentView(currentView);
 		loadAppState(currentView);
 	}
 
@@ -164,7 +165,7 @@
 			pageState.isLoading = false;
 			pageState.current =
 				typeof startAt === 'number' ? Math.max(0, Math.min(startAt, loadedQuizzes.length - 1)) : 0;
-			pageState.selectedAnswers = [];
+			pageState.questionAnswers.clear();
 			pageState.questionLocked = false;
 			return;
 		}
@@ -191,7 +192,7 @@
 		pageState.isLoading = false;
 		pageState.current =
 			typeof startAt === 'number' ? Math.max(0, Math.min(startAt, loadedQuizzes.length - 1)) : 0;
-		pageState.selectedAnswers = [];
+		pageState.questionAnswers.clear();
 		pageState.questionLocked = false;
 	}
 
@@ -204,14 +205,14 @@
 		if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
 			if (pageState.current < pageState.quizData.length - 1) {
 				pageState.current += 1;
-				pageState.selectedAnswers = [];
+				pageState.questionAnswers.clear();
 				pageState.questionLocked = false;
 			}
 			// Do nothing when at the end of questions
 		} else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
 			if (pageState.current > 0) {
 				pageState.current -= 1;
-				pageState.selectedAnswers = [];
+				pageState.questionAnswers.clear();
 				pageState.questionLocked = false;
 			}
 			// Do nothing when at the start of questions

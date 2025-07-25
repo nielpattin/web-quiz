@@ -22,8 +22,9 @@ export type AppState = {
 export type PageState = {
 	quizData: Quiz[];
 	current: number;
-	selectedAnswers: number[];
+	questionAnswers: Map<string, number[]>;
 	questionLocked: boolean;
+	questionLockedStatus: Map<string, boolean>;
 	isLoading: boolean;
 	moduleId: string; // Current module ID for the quiz
 };
@@ -31,8 +32,9 @@ export type PageState = {
 export const pageState = $state<PageState>({
 	quizData: [],
 	current: 0,
-	selectedAnswers: [],
+	questionAnswers: new SvelteMap(),
 	questionLocked: false,
+	questionLockedStatus: new SvelteMap(),
 	isLoading: false,
 	moduleId: ''
 });
@@ -43,6 +45,14 @@ export const appState = $state<AppState>({
 	all: { module: '', questionIndex: 0 },
 	favorites: { ...DEFAULT_FAVORITES_LOCAL }
 });
+
+export function setCurrentView(newView: 'all' | 'favorites') {
+	appState.currentView = newView;
+	if (newView === 'favorites') {
+		pageState.questionAnswers.clear();
+		pageState.questionLockedStatus.clear();
+	}
+}
 
 export const uiState = $state<{ sidebarOpen: boolean; showFavModal: boolean }>({
 	sidebarOpen: false,
